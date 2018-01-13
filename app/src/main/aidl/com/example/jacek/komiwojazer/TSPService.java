@@ -15,10 +15,10 @@ public class TSPService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return mBinder;
     }
 
-    private final ITSPService.Stub mBInder = new ITSPService.Stub() {
+    private final ITSPService.Stub mBinder = new ITSPService.Stub() {
 
         @Override
         public int getResult(int a) throws RemoteException {
