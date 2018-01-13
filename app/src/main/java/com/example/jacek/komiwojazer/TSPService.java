@@ -19,7 +19,6 @@ public class TSPService extends Service {
     }
 
     private final ITSPService.Stub mBinder = new ITSPService.Stub() {
-
         @Override
         public int getResult(int a) throws RemoteException {
             return a;

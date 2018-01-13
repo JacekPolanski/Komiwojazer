@@ -14,7 +14,7 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     ITSPService mITSPService = null;
-    boolean mBound = false;
+    private boolean mBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, ITSPService.class);
+        Intent intent = new Intent(this, TSPService.class);
         intent.setAction(ITSPService.class.getName());
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
