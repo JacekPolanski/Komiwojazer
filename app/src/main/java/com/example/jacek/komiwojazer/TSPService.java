@@ -120,11 +120,12 @@ public class TSPService extends Service {
     private Element[] optimize(Element[] graph2) {
         Element[] optimized = graph2;
 
-        Node[] nodes = {};
-        for (int i = 0; i < graph2.length; i++) {
-            Node a = new Node(Integer.toString(i));
-            nodes[i] = a;
-        }
+        Node[] nodes = {
+                new Node(Integer.toString(0)),
+                new Node(Integer.toString(1)),
+                new Node(Integer.toString(2)),
+                new Node(Integer.toString(3)),
+        };
 
         for (int i = 0; i < nodes.length; i++) {
             Node current = nodes[i];
@@ -142,8 +143,6 @@ public class TSPService extends Service {
         }
 
         graph = calculateShortestPathFromSource(graph, nodes[0]);
-
-
 
 //        int distance = 0;
 //
