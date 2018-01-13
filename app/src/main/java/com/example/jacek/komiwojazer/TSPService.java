@@ -123,7 +123,7 @@ public class TSPService extends Service {
         Node[] nodes = {};
         for (int i = 0; i < graph2.length; i++) {
             Node a = new Node(Integer.toString(i));
-            nodes[i] = ;
+            nodes[i] = a;
         }
 
         for (int i = 0; i < nodes.length; i++) {
