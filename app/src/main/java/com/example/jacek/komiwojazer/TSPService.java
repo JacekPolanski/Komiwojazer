@@ -2,22 +2,28 @@ package com.example.jacek.komiwojazer;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class TSPService extends Service {
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
+
+    private int theBestDistance = Integer.MAX_VALUE;
+    private int iterator = 0;
+    private static final String inputFileName = "input.txt";
+    private static final String outputFileName = "output.txt";
 
     @Nullable
     @Override
@@ -25,67 +31,24 @@ public class TSPService extends Service {
         return mBinder;
     }
 
-    private static Graph calculateShortestPathFromSource(Graph graph, Node source) {
-        source.setDistance(0);
-
-        Set<Node> settledNodes = new HashSet<>();
-        Set<Node> unsettledNodes = new HashSet<>();
-
-        unsettledNodes.add(source);
-
-        while (unsettledNodes.size() != 0) {
-            Node currentNode = getLowestDistanceNode(unsettledNodes);
-            unsettledNodes.remove(currentNode);
-            for (Map.Entry< Node, Integer> adjacencyPair:
-                    currentNode.getAdjacentNodes().entrySet()) {
-                Node adjacentNode = adjacencyPair.getKey();
-                Integer edgeWeight = adjacencyPair.getValue();
-                if (!settledNodes.contains(adjacentNode)) {
-                    CalculateMinimumDistance(adjacentNode, edgeWeight, currentNode);
-                    unsettledNodes.add(adjacentNode);
-                }
+    private Node[] generate(int n, Node[] A) {
+        if (n == 1) {
+            iterator++;
+            int distance = countDistance(A);
+            if (distance < theBestDistance) {
+                theBestDistance = distance;
             }
-            settledNodes.add(currentNode);
-        }
-        return graph;
-    }
-
-    private static void CalculateMinimumDistance(Node evaluationNode,
-                                                 Integer edgeWeigh, Node sourceNode) {
-        Integer sourceDistance = sourceNode.getDistance();
-        if (sourceDistance + edgeWeigh < evaluationNode.getDistance()) {
-            evaluationNode.setDistance(sourceDistance + edgeWeigh);
-            LinkedList<Node> shortestPath = new LinkedList<>(sourceNode.getShortestPath());
-            shortestPath.add(sourceNode);
-            evaluationNode.setShortestPath(shortestPath);
-        }
-    }
-
-    private static Node getLowestDistanceNode(Set < Node > unsettledNodes) {
-        Node lowestDistanceNode = null;
-        int lowestDistance = Integer.MAX_VALUE;
-        for (Node node: unsettledNodes) {
-            int nodeDistance = node.getDistance();
-            if (nodeDistance < lowestDistance) {
-                lowestDistance = nodeDistance;
-                lowestDistanceNode = node;
-            }
-        }
-        return lowestDistanceNode;
-    }
-
-    private Element[] generate(int n, Element[] A) {
-        if (n != 1) {
+        } else {
             for(int i = 0; i < n - 1; i++) {
                 generate(n - 1, A);
                 if (n % 2 == 0) {
-                    Element a = A[i];
-                    Element b = A[n - 1];
+                    Node a = A[i];
+                    Node b = A[n - 1];
                     A[i] = b;
                     A[n-1] = a;
                 } else {
-                    Element a = A[0];
-                    Element b = A[n - 1];
+                    Node a = A[0];
+                    Node b = A[n - 1];
                     A[0] = b;
                     A[n-1] = a;
                 }
@@ -96,19 +59,19 @@ public class TSPService extends Service {
         return A;
     }
 
-    private int countDistance(Element[] graph) {
+    private int countDistance(Node[] graph) {
         int distance = 0;
         for (int i = 0; i < graph.length; i++) {
-            Element a = graph[i];
-            Element b = i + 1 < graph.length ? graph[i + 1] : graph[0];
-
-            distance += countDistanceBetweenTwoPoints(a, b);
+            distance += countDistanceBetweenTwoPoints(
+                    graph[i],
+                    i + 1 == graph.length ? graph[0] : graph[i + 1]
+            );
         }
 
         return distance;
     }
 
-    private int countDistanceBetweenTwoPoints(Element a, Element b) {
+    private int countDistanceBetweenTwoPoints(Node a, Node b) {
         int axbx = a.getX() - b.getX();
         int ayby = a.getY() - b.getY();
         int pow1 = (int) Math.pow(axbx, 2);
@@ -117,155 +80,96 @@ public class TSPService extends Service {
         return  (int) Math.sqrt(pow1 + pow2);
     }
 
-    private Element[] optimize(Element[] graph2) {
-        Element[] optimized = graph2;
-
-        Node[] nodes = {
-                new Node(Integer.toString(0)),
-                new Node(Integer.toString(1)),
-                new Node(Integer.toString(2)),
-                new Node(Integer.toString(3)),
-        };
-
-        for (int i = 0; i < nodes.length; i++) {
-            Node current = nodes[i];
-            for (int j = 0; j < nodes.length; j++) {
-                if (j != i) {
-                    current.addDestination(nodes[j], countDistanceBetweenTwoPoints(graph2[i], graph2[j]));
-                }
-            }
-        }
-
-        Graph graph = new Graph();
-
-        for (Node node : nodes) {
-            graph.addNode(node);
-        }
-
-        graph = calculateShortestPathFromSource(graph, nodes[0]);
-
-//        int distance = 0;
-//
-//        for (int i = 0; i < 10; i++) {
-//            distance = countDistance(optimized);
-//
-//            optimized = generate(graph.length, graph);
-//        }
-
-        return optimized;
-    }
-
     private final ITSPService.Stub mBinder = new ITSPService.Stub() {
         @Override
-        public int getResult(int a) throws RemoteException {
-            /**
-             1 565.0 575.0
-             2 25.0 185.0
-             3 345.0 750.0
-             4 945.0 685.0
-             5 845.0 655.0
-             6 880.0 660.0
-             7 25.0 230.0
-             8 525.0 1000.0
-             9 580.0 1175.0
-             10 650.0 1130.0
-             */
+        public String getResult() throws RemoteException {
 
-            Element[] graph = {
-                new Element(565, 575),
-                new Element(25, 185),
-                new Element(345, 750),
-                new Element(945, 685),
-            };
+            Node[] graph = readGraphFromFile(inputFileName);
+            writeToFile("Graph: ");
+            writeGraphToFile(graph);
 
-            Element[] cos = optimize(graph);
+            Log.i("graph", "Start generate");
+            Node[] shortestPath = generate(graph.length, graph);
+            Log.i("graph", "Stop generate");
 
-            return a;
+
+            writeToFile("Optimized distance: " + theBestDistance);
+            writeToFile("Permutations count: " + iterator);
+            writeToFile("Shortest path:");
+            writeGraphToFile(shortestPath);
+            writeToFile("");
+
+            return  "Wyliczony dystans: " + theBestDistance + " Iteracje: " + iterator;
         }
     };
-}
 
-class Element {
-    private int x,y;
-
-    public Element(int x, int y) {
-        this.x = x;
-        this.y = y;
+    private void writeGraphToFile(Node[] graph) {
+        for (Node vertex : graph) {
+            writeToFile(vertex.getName() + " " + vertex.getX() + " " + vertex.getY());
+        }
     }
 
-    public int getX() {
-        return x;
+    private void writeToFile(String string) {
+        File externalStorageDirectory = Environment.getExternalStorageDirectory();
+        externalStorageDirectory = new File(externalStorageDirectory, outputFileName);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(externalStorageDirectory, true);
+        } catch (FileNotFoundException ex) {
+            //deal with the problem
+        }
+        PrintWriter pw = new PrintWriter(fos);
+        pw.println(string);
+        pw.close();
     }
 
-    public int getY() {
-        return y;
-    }
-}
+    private Node[] readGraphFromFile(String fileName)
+    {
+        File sdcard = Environment.getExternalStorageDirectory();
+        File file = new File(sdcard, fileName);
 
-class Graph {
+        List<Node> graph = new ArrayList<>();
 
-    private Set<Node> nodes = new HashSet<>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
 
-    void addNode(Node nodeA) {
-        nodes.add(nodeA);
-    }
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" ");
+                graph.add(
+                    new Node(parts[0],
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2]))
+                );
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-    public Set<Node> getNodes() {
-        return nodes;
-    }
-
-    public void setNodes(Set<Node> nodes) {
-        this.nodes = nodes;
+        return graph.toArray(new Node[graph.size()]);
     }
 }
 
 class Node {
-
+    private int x,y;
     private String name;
 
-    private List<Node> shortestPath = new LinkedList<>();
-
-    private Integer distance = Integer.MAX_VALUE;
-
-    Map<Node, Integer> adjacentNodes = new HashMap<>();
-
-    void addDestination(Node destination, int distance) {
-        adjacentNodes.put(destination, distance);
+    Node(String name, int x, int y) {
+        this.name = name;
+        this.x = x;
+        this.y = y;
     }
 
-    Node(String name) {
-        this.name = name;
+    int getX() {
+        return x;
+    }
+
+    int getY() {
+        return y;
     }
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    List<Node> getShortestPath() {
-        return shortestPath;
-    }
-
-    void setShortestPath(List<Node> shortestPath) {
-        this.shortestPath = shortestPath;
-    }
-
-    public Integer getDistance() {
-        return distance;
-    }
-
-    public void setDistance(Integer distance) {
-        this.distance = distance;
-    }
-
-    public Map<Node, Integer> getAdjacentNodes() {
-        return adjacentNodes;
-    }
-
-    public void setAdjacentNodes(Map<Node, Integer> adjacentNodes) {
-        this.adjacentNodes = adjacentNodes;
     }
 }

@@ -10,7 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     ITSPService mITSPService = null;
@@ -39,8 +39,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void onButtonClick(View v) throws RemoteException {
         if (mBound) {
-            int num = mITSPService.getResult(2);
-            Toast.makeText(this, "number: " + num, Toast.LENGTH_SHORT).show();
+            String result = mITSPService.getResult();
+            TextView textView = findViewById(R.id.textView);
+            textView.setText(result);
         }
     }
 
